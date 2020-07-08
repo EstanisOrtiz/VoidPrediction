@@ -41,15 +41,15 @@ def LDA_model (df):
 
     pairs = [(np.abs(eigen_values[i]), eigen_vectors[:, i]) for i in range(len(eigen_values))]
     pairs = sorted(pairs, key=lambda x: x[0], reverse=True)
-    print('Pairs:')
-    for pair in pairs:
-        print(pair[0])
+    #print('Pairs:')
+    #for pair in pairs:
+        #print(pair[0])
 
     eigen_value_sums = sum(eigen_values)
-    print('------------------')
-    print('Explained Variance')
-    for i, pair in enumerate(pairs):
-        print('Eigenvector {}: {}'.format(i, (pair[0] / eigen_value_sums).real))
+    #print('------------------')
+    #print('Explained Variance')
+    #for i, pair in enumerate(pairs):
+        #print('Eigenvector {}: {}'.format(i, (pair[0] / eigen_value_sums).real))
 
     w_matrix = np.hstack((pairs[0][1].reshape(19, 1), pairs[1][1].reshape(19, 1))).real
 
