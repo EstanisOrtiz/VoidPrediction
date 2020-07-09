@@ -18,7 +18,7 @@ inputs = ['1_001', '1_002', '1_003', '1_004', '1_005', '1_006', '1_007', '1_008'
           '5_001', '5_002', '5_003', '5_004', '5_005', '5_006', '5_007', '5_008', '5_009', '5_010', '5_011',
           '6_001', '6_002', '6_003', '6_004', '6_005', '6_006', '6_007', '6_008', '6_009', '6_010']
 
-#inputs=['1_001']
+inputs=['1_001']
 
 for name in inputs:
     print(name)
@@ -48,6 +48,11 @@ for name in inputs:
 
     ### Select boundaries in void vicinity
     selected = sel.selgb(gbdata, centers, radii)
+    print('From Selected function:')
+    print(selected_data)
+    print('----------')
+    print('From Selected txt:')
+    print(selected)
 
     ### Starting points
     staptsx = gbdata[:, 15]
@@ -97,9 +102,9 @@ for name in inputs:
     os.system('mkdir '+pa_current+'/output/'+name)
 
     pa_image=pa_current+'/output/'+name
-    cv2.imwrite(os.path.join(pa_image, name+'_'+format(len(centers))+'.png'), image)
-    cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
-    cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
+    #cv2.imwrite(os.path.join(pa_image, name+'_'+format(len(centers))+'.png'), image)
+    #cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
+    #cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
 
     #np.savetxt((pa_image + '/selected.txt'), selected_data)
 

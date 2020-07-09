@@ -4,8 +4,13 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 sns.set()
 from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
-def LDA_model (df):
+
+def LDA_model (df,random_state_value):
 
     # Within Class Scatter Matrix
     class_feature_means = pd.DataFrame(columns=[0.0, 1.0])
@@ -70,3 +75,27 @@ def LDA_model (df):
     )
 
     plt.show()
+
+    X_train, X_test, y_train, y_test = train_test_split(X_lda, y, random_state=random_state_value)
+
+    dt = RandomForestClassifier()
+    dt.fit(X_train, y_train)
+    y_pred = dt.predict(X_test)
+    cm=confusion_matrix(y_test, y_pred)
+    print('CONFUSION MATRIX:')
+    print(cm)
+    print('Accuracy: ' + str(accuracy_score(y_test, y_pred)))
+    print('\n')
+    print('Analytic Results:')
+    precision_class1 = cm[0][0] / (cm[0][0] + cm[1][0])
+    precision_class2 = cm[1][1] / (cm[1][1] + cm[0][1])
+    recall_class1 = cm[0][0] / (cm[0][0] + cm[0][1])
+    recall_class2 = cm[1][1] / (cm[1][1] + cm[1][0])
+    accuracy = (cm[0][0] + cm[1][1]) / (cm[0][0] + cm[0][1] + cm[1][0] + cm[1][1])
+    print('Recall score class 1: ' + str(recall_class1))
+    print('Recall score class 2: ' + str(recall_class2))
+    print('Precision class 1: ' + str(precision_class1))
+    print('Precision class 2: ' + str(precision_class2))
+    print('Accuracy: ' + str(accuracy))
+
+    return X_lda, y, cm, y_test, y_pred
