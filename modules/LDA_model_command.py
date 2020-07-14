@@ -26,11 +26,11 @@ def LDA_model_command(df):
 
     # LDA transform
     lda = LDA(n_components=1)
-    X_train = lda.fit_transform(X_train, y_train)
-    X_test = lda.transform(X_test)
+    X_train = lda.fit_transform(X_train, y_train)   # X_lda
+    X_test = lda.transform(X_test)                  # X_lda_pred
 
     # Classifier Random Foreset Classifier
-    classifier = RandomForestClassifier(max_depth=2, random_state=0)
+    classifier = RandomForestClassifier(max_depth=10, random_state=0) # Depth
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)
 

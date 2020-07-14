@@ -102,11 +102,11 @@ for name in inputs:
     os.system('mkdir '+pa_current+'/output/'+name)
 
     pa_image=pa_current+'/output/'+name
-    #cv2.imwrite(os.path.join(pa_image, name+'_'+format(len(centers))+'.png'), image)
-    #cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
-    #cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
+    cv2.imwrite(os.path.join(pa_image, name+'_'+format(len(centers))+'.png'), image)
+    cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
+    cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
 
-    #np.savetxt((pa_image + '/selected.txt'), selected_data)
+    np.savetxt((pa_image + '/selected.txt'), selected_data)
 
     #vis = np.concatenate((image, voidimage), axis=0)
     #cv2.imshow(name+' mix', drawing)
