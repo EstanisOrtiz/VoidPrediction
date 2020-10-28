@@ -8,6 +8,7 @@ import os.path
 # Custom modules
 from modules import voiddetect as vd
 from modules import select_voidboundaries as sel
+from modules import checkCollision as checkCollision
 
 # z = int(raw_input('How many files would you like to add?: '))
 ## Gather inputs
@@ -18,7 +19,7 @@ inputs = ['1_001', '1_002', '1_003', '1_004', '1_005', '1_006', '1_007', '1_008'
           '5_001', '5_002', '5_003', '5_004', '5_005', '5_006', '5_007', '5_008', '5_009', '5_010', '5_011',
           '6_001', '6_002', '6_003', '6_004', '6_005', '6_006', '6_007', '6_008', '6_009', '6_010']
 
-inputs=['1_001']
+inputs=['1_001', '1_002', '1_003']
 
 for name in inputs:
     print(name)
@@ -48,10 +49,10 @@ for name in inputs:
 
     ### Select boundaries in void vicinity
     selected = sel.selgb(gbdata, centers, radii)
-    print('From Selected function:')
+    print('From Selected txt:')
     print(selected_data)
     print('----------')
-    print('From Selected txt:')
+    print('From Selected function:')
     print(selected)
 
     ### Starting points
@@ -60,7 +61,7 @@ for name in inputs:
     #### Ending points
     endptsx = gbdata[:, 17]
     endptsy = gbdata[:, 18]
-    # mis_angle = gbdata[:,6]
+    mis_angle = gbdata[:,6]
     # Find dimensions for picture
     width = np.amax(gbdata[:, 17])
     height = np.amax(gbdata[:, 18])
@@ -70,7 +71,7 @@ for name in inputs:
 
     ratio = height / vheight
 
-    #centers = np.asarray(centers) * ratio * 1.0
+    #centers = np.asarray(centers) * ratio * 1.054
     #radii = np.asarray(radii) * ratio
 
     #os.system('mkdir ' + pa_current + '/outputs/' + name)
@@ -96,8 +97,10 @@ for name in inputs:
     for i, center in enumerate(centers):
         cv2.circle(image, center, 3, (255, 0, 0), -1)
         cv2.circle(image, center, int(radii[i]), (0, 0, 255), 3)
+        cv2.putText(image ,str(i),center,cv2.FONT_HERSHEY_SIMPLEX, 2 ,(0,0,255), 2)
 
-    #cv2.imshow(name + ' BC', image)chispeante
+
+    #cv2.imshow(name + ' BC', image)
 
     os.system('mkdir '+pa_current+'/output/'+name)
 
@@ -106,7 +109,84 @@ for name in inputs:
     cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
     cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
 
-    np.savetxt((pa_image + '/selected.txt'), selected_data)
+    #np.savetxt((pa_image + '/selected.txt'), selected_data)
+
+    void_dicc = {}
+    void_parameter_dicc = {}
+    #keys = np.arange(0, len(centers))
+
+
+    for i, center in enumerate(centers):
+        count = 0
+        number_of_gb_in_void = 0
+        image_test = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
+
+        for j, _ in enumerate(endptsx):
+            if j in selected_data: # Only void values are in 'j'
+                x_s=staptsx[j]
+                y_s=staptsy[j]
+                x_e=endptsx[j]
+                y_e=endptsy[j]
+                if checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i]*1.3) is True:
+                    number_of_gb_in_void += 1
+                    s_p = (np.int64(x_s), np.int64(y_s))
+                    e_p = (np.int64(x_e), np.int64(y_e))
+                    image_test = cv2.line(image_test, s_p, e_p, color, thickness)
+                    thickness = 4
+                    color = (0, 255, 0)
+                    image_test = cv2.line(image_test, s_p, e_p, color, thickness)
+
+                cv2.circle(image_test, center, 3, (255, 0, 0), -1)
+                cv2.circle(image_test, center, int(radii[i]), (0, 0, 255), 3)
+                #cv2.putText(image_test, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2)
+
+        if number_of_gb_in_void!=0:
+            if number_of_gb_in_void<2:
+                void_parameter=1
+            else:
+                void_parameter=2*(1/number_of_gb_in_void)
+        elif number_of_gb_in_void==0:
+            void_parameter=0
+
+        cv2.putText(image_test, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        parameter_center=(center[0],center[1]+50)
+        cv2.putText(image_test, str(void_parameter), parameter_center, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 0, 0), 2)
+
+        void_parameter_dicc[i]= void_parameter
+        void_dicc[i] = number_of_gb_in_void
+        cv2.imwrite(os.path.join(pa_image, str(i) + '_test' + '.png'), image_test)
+
+    print(void_dicc)
+    print(void_parameter_dicc)
+
+
+
+    break
+
+        #for x_s, y_s, x_e, y_e in zip(staptsx, staptsy, endptsx, endptsy):
+            #s_p = (np.int64(x_s), np.int64(y_s))
+            #e_p = (np.int64(x_e), np.int64(y_e))
+            #image_test = cv2.line(image_test, s_p, e_p, color, thickness)
+            #if checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i]) is True:
+                #s_p = (np.int64(width_factor * x_s), np.int64(height_factor * y_s))
+                #e_p = (np.int64(width_factor * x_e), np.int64(height_factor * y_e))
+                #s_p = (np.int64(x_s), np.int64(y_s))
+                #e_p = (np.int64(x_e), np.int64(y_e))
+                #thickness = 4
+                #color = (0, 255, 0)
+                #cv2.circle(image_test, center, 3, (255, 0, 0), -1)
+                #cv2.circle(image_test, center, int(radii[i]), (0, 0, 255), 3)
+                #cv2.putText(image_test, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2)
+
+                #image_test = cv2.line(image_test, s_p, e_p, color, thickness)
+                # same_void.append(dummy)
+                #number_of_gb_in_void += 1
+            #count += 1
+        #void_dicc[i] = number_of_gb_in_void
+        #cv2.imwrite(os.path.join(pa_image, str(i) + '_test' + '.png'), image_test)
+
+    #print(void_dicc)
+
 
     #vis = np.concatenate((image, voidimage), axis=0)
     #cv2.imshow(name+' mix', drawing)
