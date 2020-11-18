@@ -3,13 +3,12 @@ from .checkCollision import *
 
 def void_parameter(gbdata, selected, centers, radii, drawing):
     """
-
     :param gbdata: All data of the ebsd sample.
     :param selected: Position of the grains boundary inside affected by a void.
     :param centers: All coordinates of the each void center.
     :param radii: All radii values of each void.
     :param drawing: Size of the sample.
-    :return: gb_par -> Dictionary with Key=selected boundaty & Value=Void Parameter.
+    :return: gb_par -> Dictionary with Key=selected boundary & Value=Void Parameter.
     """
     ### Starting points
     staptsx = gbdata[:, 15]
@@ -61,5 +60,4 @@ def void_parameter(gbdata, selected, centers, radii, drawing):
     # Sort keys - Interesting, it breaks the dictionary form, it can be useful.
     #dictionary_items = gb_par.items()
     #sorted_items = sorted(dictionary_items)
-
     return gb_par

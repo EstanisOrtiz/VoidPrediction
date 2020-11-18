@@ -1,6 +1,4 @@
 import numpy as np
-
-
 def checkCollision(x1, x2, y1, y2, x, y, radius):
     """
 
@@ -13,11 +11,6 @@ def checkCollision(x1, x2, y1, y2, x, y, radius):
     :param radius: radii of the void
     :return: boolean expression to whether the grain boundary is or is not inside the void
     """
-
-    #if radius>25:
-        #fos=1.5
-    #else:
-        #fos=2
     fos=1.5 # Factor of safety on the radiius
 
     if x1>(x - radius*fos) and x1<(x + radius*fos) and y1>(y - radius*fos) and y1<(y + radius*fos) \

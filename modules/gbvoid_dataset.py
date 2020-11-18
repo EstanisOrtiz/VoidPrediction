@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import os
 
@@ -6,7 +5,10 @@ from .voiddetect import *
 from .void_parameter import *
 
 def gbvoid_dataset(input_name):
-
+    """
+    :param input_name: Name of the file to compute
+    :return: pandas dataframe with all the features as X and output Y as void parameter value
+    """
     ### get current directory
     pa_current = os.getcwd()
     pa_parent = os.path.dirname(pa_current)
@@ -43,9 +45,6 @@ def gbvoid_dataset(input_name):
         else:
             Y_void[i]=0
 
-
     X_void['Void']=Y_void
-    #Y_void=pd.DataFrame(Y_void)
     void_dataset=X_void
-
     return void_dataset
