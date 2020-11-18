@@ -9,6 +9,7 @@ import os.path
 from modules import voiddetect as vd
 from modules import select_voidboundaries as sel
 from modules import checkCollision as checkCollision
+from modules import void_parameter as void_parameter_function
 
 # z = int(raw_input('How many files would you like to add?: '))
 ## Gather inputs
@@ -19,7 +20,7 @@ inputs = ['1_001', '1_002', '1_003', '1_004', '1_005', '1_006', '1_007', '1_008'
           '5_001', '5_002', '5_003', '5_004', '5_005', '5_006', '5_007', '5_008', '5_009', '5_010', '5_011',
           '6_001', '6_002', '6_003', '6_004', '6_005', '6_006', '6_007', '6_008', '6_009', '6_010']
 
-inputs=['1_001', '1_002', '1_003']
+#inputs=['1_001']
 
 for name in inputs:
     print(name)
@@ -47,13 +48,8 @@ for name in inputs:
     ### run voiddetect module and return centers and radii of detected voids
     centers, radii, vheight, voidimage, drawing = vd.findvoid(pa_pic, name, maxarea)
 
-    ### Select boundaries in void vicinity
+    ### Select boundaries in void vicinity  - WRONG VALUES, USE selected_data form saboutputs
     selected = sel.selgb(gbdata, centers, radii)
-    print('From Selected txt:')
-    print(selected_data)
-    print('----------')
-    print('From Selected function:')
-    print(selected)
 
     ### Starting points
     staptsx = gbdata[:, 15]
@@ -62,6 +58,7 @@ for name in inputs:
     endptsx = gbdata[:, 17]
     endptsy = gbdata[:, 18]
     mis_angle = gbdata[:,6]
+    trace = gbdata[:,14]
     # Find dimensions for picture
     width = np.amax(gbdata[:, 17])
     height = np.amax(gbdata[:, 18])
@@ -69,16 +66,15 @@ for name in inputs:
     lhgrain=gbdata[:, 19]
     rhgrain=gbdata[:, 20]
 
-    ratio = height / vheight
+    #ratio = height / vheight
 
     #centers = np.asarray(centers) * ratio * 1.054
     #radii = np.asarray(radii) * ratio
 
-    #os.system('mkdir ' + pa_current + '/outputs/' + name)
-
     # Blank image
     height_factor = drawing.shape[0]/np.int64(height)
     width_factor = drawing.shape[1]/np.int64(width)
+
 
     image = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
 
@@ -86,8 +82,7 @@ for name in inputs:
         start_point = (np.int64(width_factor*staptsx[i]), np.int64(height_factor*staptsy[i]))
         end_point = (np.int64(width_factor*endptsx[i]), np.int64(height_factor*endptsy[i]))
         if i in selected_data:
-        # if lhgrain[i] in selected or rhgrain[i] in selected:
-            thickness = 4
+            thickness = 2
             color = (0 , 255, 0)
         else:
             thickness = 2
@@ -97,41 +92,35 @@ for name in inputs:
     for i, center in enumerate(centers):
         cv2.circle(image, center, 3, (255, 0, 0), -1)
         cv2.circle(image, center, int(radii[i]), (0, 0, 255), 3)
-        cv2.putText(image ,str(i),center,cv2.FONT_HERSHEY_SIMPLEX, 2 ,(0,0,255), 2)
-
+        cv2.putText(image ,str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,255), 2)
 
     #cv2.imshow(name + ' BC', image)
 
-    os.system('mkdir '+pa_current+'/output/'+name)
+    os.system('mkdir -p '+pa_current+'/output/'+name)
 
     pa_image=pa_current+'/output/'+name
     cv2.imwrite(os.path.join(pa_image, name+'_'+format(len(centers))+'.png'), image)
     cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
     cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
 
-    #np.savetxt((pa_image + '/selected.txt'), selected_data)
-
     void_dicc = {}
     void_parameter_dicc = {}
-    #keys = np.arange(0, len(centers))
 
-
-    for i, center in enumerate(centers):
+    for i, center in enumerate(centers): #Centers
         count = 0
         number_of_gb_in_void = 0
         image_test = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
-
         for j, _ in enumerate(endptsx):
             if j in selected_data: # Only void values are in 'j'
-                x_s=staptsx[j]
-                y_s=staptsy[j]
-                x_e=endptsx[j]
-                y_e=endptsy[j]
-                if checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i]*1.3) is True:
+                x_s=np.int64(width_factor * staptsx[j])
+                y_s=np.int64(height_factor * staptsy[j])
+                x_e=np.int64(width_factor * endptsx[j])
+                y_e=np.int64(height_factor * endptsy[j])
+
+                if checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i]) is True:
                     number_of_gb_in_void += 1
                     s_p = (np.int64(x_s), np.int64(y_s))
                     e_p = (np.int64(x_e), np.int64(y_e))
-                    image_test = cv2.line(image_test, s_p, e_p, color, thickness)
                     thickness = 4
                     color = (0, 255, 0)
                     image_test = cv2.line(image_test, s_p, e_p, color, thickness)
@@ -141,10 +130,15 @@ for name in inputs:
                 #cv2.putText(image_test, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2)
 
         if number_of_gb_in_void!=0:
-            if number_of_gb_in_void<2:
+            if number_of_gb_in_void<=2:
                 void_parameter=1
+            elif number_of_gb_in_void==3:
+                void_parameter=0.75
+            elif number_of_gb_in_void==4:
+                void_parameter=0.5
             else:
-                void_parameter=2*(1/number_of_gb_in_void)
+                void_parameter=0.25
+                #void_parameter=2*(1/number_of_gb_in_void)
         elif number_of_gb_in_void==0:
             void_parameter=0
 
@@ -156,65 +150,10 @@ for name in inputs:
         void_dicc[i] = number_of_gb_in_void
         cv2.imwrite(os.path.join(pa_image, str(i) + '_test' + '.png'), image_test)
 
-    print(void_dicc)
-    print(void_parameter_dicc)
-
-
+    #print(void_parameter_dicc)
+    #print(void_dicc)
+    #test_function=void_parameter_function.void_parameter(gbdata, selected_data, centers, radii, drawing)
+    #print(test_function)
 
     break
-
-        #for x_s, y_s, x_e, y_e in zip(staptsx, staptsy, endptsx, endptsy):
-            #s_p = (np.int64(x_s), np.int64(y_s))
-            #e_p = (np.int64(x_e), np.int64(y_e))
-            #image_test = cv2.line(image_test, s_p, e_p, color, thickness)
-            #if checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i]) is True:
-                #s_p = (np.int64(width_factor * x_s), np.int64(height_factor * y_s))
-                #e_p = (np.int64(width_factor * x_e), np.int64(height_factor * y_e))
-                #s_p = (np.int64(x_s), np.int64(y_s))
-                #e_p = (np.int64(x_e), np.int64(y_e))
-                #thickness = 4
-                #color = (0, 255, 0)
-                #cv2.circle(image_test, center, 3, (255, 0, 0), -1)
-                #cv2.circle(image_test, center, int(radii[i]), (0, 0, 255), 3)
-                #cv2.putText(image_test, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2)
-
-                #image_test = cv2.line(image_test, s_p, e_p, color, thickness)
-                # same_void.append(dummy)
-                #number_of_gb_in_void += 1
-            #count += 1
-        #void_dicc[i] = number_of_gb_in_void
-        #cv2.imwrite(os.path.join(pa_image, str(i) + '_test' + '.png'), image_test)
-
-    #print(void_dicc)
-
-
-    #vis = np.concatenate((image, voidimage), axis=0)
-    #cv2.imshow(name+' mix', drawing)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
-
-
-##### Plot background picture
-### Comment/Uncomment as needed
-# fig, ax = plt.subplots(1)
-# im = plt.imread(pa_pic)
-# implot = plt.imshow(im, origin='lower', extent=[0, width, 0, height], aspect='equal')
-
-####Plot points
-# IniPlot = zip(staptsx, staptsy, endptsx, endptsy)
-# for tuple in IniPlot:
-# plt.plot([tuple[0], tuple[2]], [tuple[1], tuple[3]],'#000000')
-
-# for tuple in zip(centers, radii):
-# circ = Circle(tuple[0], tuple[1], color='#FFFF00', linewidth=3, fill=False)
-# ax.add_patch(circ)
-
-# for row in selected:
-# plt.plot([staptsx[row], endptsx[row]], [staptsy[row], endptsy[row]], color='#FF0000', linewidth= 2)
-#### Save file (Comment/Uncomment as needed)
-# plt.savefig(pa_current+'/outputs/detectpics/'+name+'.png')# , bbox_inches='tight')
-# fig.clf()
-#### Show plot (Comment/Uncomment as needed)
-# plt.show()
-### End plot background picture
 
