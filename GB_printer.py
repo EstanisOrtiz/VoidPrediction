@@ -159,4 +159,10 @@ for name in inputs:
     cv2.imshow(name, image_void)
     cv2.imshow('CHECK', image_check)
     cv2.waitKey(0)
+
+    # SAVE NEW SELECTED BOUNDARIES
+
+
+
+
     break

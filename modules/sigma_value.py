@@ -11,7 +11,6 @@ def sigma_value(name): # Name sample
     gbdata = np.genfromtxt(pa_txt)
     Eul1 = gbdata[:, (0, 1, 2)]  # RAD
     Eul2 = gbdata[:, (3, 4, 5)]  # RAD
-    misor = gbdata[:, 6]  # Degrees
     trace = gbdata[:, 14] # Degrees
 
 
