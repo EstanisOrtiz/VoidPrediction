@@ -74,86 +74,89 @@ for name in inputs:
     # Blank image
     height_factor = drawing.shape[0]/np.int64(height)
     width_factor = drawing.shape[1]/np.int64(width)
-
-
+    image_void=255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
+    image_check =255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
     image = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
 
     for i, _ in enumerate(endptsx):
         start_point = (np.int64(width_factor*staptsx[i]), np.int64(height_factor*staptsy[i]))
         end_point = (np.int64(width_factor*endptsx[i]), np.int64(height_factor*endptsy[i]))
+        thickness = 2
         if i in selected_data:
-            thickness = 2
             color = (0 , 255, 0)
         else:
-            thickness = 2
             color = (0,0,0)
         image = cv2.line(image, start_point, end_point, color, thickness)
+        image_void = cv2.line(image_void, start_point, end_point, (245, 245, 245), thickness)
+
 
     for i, center in enumerate(centers):
         cv2.circle(image, center, 3, (255, 0, 0), -1)
         cv2.circle(image, center, int(radii[i]), (0, 0, 255), 3)
         cv2.putText(image ,str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,255), 2)
 
-    #cv2.imshow(name + ' BC', image)
-
-    os.system('mkdir -p '+pa_current+'/output/'+name)
-
-    pa_image=pa_current+'/output/'+name
-    cv2.imwrite(os.path.join(pa_image, name+'_'+format(len(centers))+'.png'), image)
-    cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
-    cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
-
     void_dicc = {}
     void_parameter_dicc = {}
 
     for i, center in enumerate(centers): #Centers
+        print('-----', str(i), '---------')
         count = 0
         number_of_gb_in_void = 0
-        image_test = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
         for j, _ in enumerate(endptsx):
-            if j in selected_data: # Only void values are in 'j'
-                x_s=np.int64(width_factor * staptsx[j])
-                y_s=np.int64(height_factor * staptsy[j])
-                x_e=np.int64(width_factor * endptsx[j])
-                y_e=np.int64(height_factor * endptsy[j])
+            thickness = 4
+            x_s = np.int64(width_factor * staptsx[j])
+            y_s = np.int64(height_factor * staptsy[j])
+            x_e = np.int64(width_factor * endptsx[j])
+            y_e = np.int64(height_factor * endptsy[j])
+            s_p = (np.int64(x_s), np.int64(y_s))
+            e_p = (np.int64(x_e), np.int64(y_e))
 
-                if checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i]) is True:
-                    number_of_gb_in_void += 1
-                    s_p = (np.int64(x_s), np.int64(y_s))
-                    e_p = (np.int64(x_e), np.int64(y_e))
-                    thickness = 4
+            if checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i], 1) is True:
+                image_check = cv2.line(image_check, s_p, e_p, (255,0,0), thickness)
+                if j in selected_data:
                     color = (0, 255, 0)
-                    image_test = cv2.line(image_test, s_p, e_p, color, thickness)
-
-                cv2.circle(image_test, center, 3, (255, 0, 0), -1)
-                cv2.circle(image_test, center, int(radii[i]), (0, 0, 255), 3)
-                #cv2.putText(image_test, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2)
+                    number_of_gb_in_void += 1
+                else:
+                    color = (255, 153, 255)
+                    print(j)
+                image_void = cv2.line(image_void, s_p, e_p, color, thickness)
+            elif checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i], 1) is False and j in selected_data:
+                    color = (255, 255, 0)
+                    print("-", str(j), '-')
+                    image_void = cv2.line(image_void, s_p, e_p, color, thickness)
+            cv2.circle(image_void, center, 3, (255, 0, 0), -1)
+            cv2.circle(image_void, center, int(radii[i]), (0, 0, 255), 3)
 
         if number_of_gb_in_void!=0:
-            if number_of_gb_in_void<=2:
+            void_parameter=round((2*(1/number_of_gb_in_void)), 2)
+            if void_parameter>1:
                 void_parameter=1
-            elif number_of_gb_in_void==3:
-                void_parameter=0.75
-            elif number_of_gb_in_void==4:
-                void_parameter=0.5
-            else:
+            elif void_parameter<0.5:
                 void_parameter=0.25
-                #void_parameter=2*(1/number_of_gb_in_void)
-        elif number_of_gb_in_void==0:
+        else:
             void_parameter=0
 
-        cv2.putText(image_test, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(image_void, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         parameter_center=(center[0],center[1]+50)
-        cv2.putText(image_test, str(void_parameter), parameter_center, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 0, 0), 2)
+        cv2.putText(image_void, str(void_parameter), parameter_center, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 0, 0), 2)
 
         void_parameter_dicc[i]= void_parameter
         void_dicc[i] = number_of_gb_in_void
-        cv2.imwrite(os.path.join(pa_image, str(i) + '_test' + '.png'), image_test)
+    # print(void_parameter_dicc) # Num Void and Void Parameter
+    # print(void_dicc)  # Num Void and Number of gb inside
+    # test_function=void_parameter_function.void_parameter(gbdata, selected_data, centers, radii, drawing)
+    # print(test_function)
 
-    #print(void_parameter_dicc)
-    #print(void_dicc)
-    #test_function=void_parameter_function.void_parameter(gbdata, selected_data, centers, radii, drawing)
-    #print(test_function)
+    # SAVE THE PICTURES
+    os.system('mkdir -p ' + pa_current + '/output/' + name)
+    pa_image = pa_current + '/output/' + name
+    #cv2.imwrite(os.path.join(pa_image, name + '_' + format(len(centers)) + '.png'), image)
+    #cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
+    #cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
+    #cv2.imwrite(os.path.join(pa_image, str(name) + '_selected' + '.png'), image_void)
 
+    # SHOW PICTURE
+    cv2.imshow(name, image_void)
+    cv2.imshow('CHECK', image_check)
+    cv2.waitKey(0)
     break
-

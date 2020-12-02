@@ -35,21 +35,32 @@ def void_parameter(gbdata, selected, centers, radii, drawing):
                 y_s = np.int64(height_factor * staptsy[j])
                 x_e = np.int64(width_factor * endptsx[j])
                 y_e = np.int64(height_factor * endptsy[j])
-                if checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i]) is True:
+                if checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i], 1.4) is True:
                     number_of_gb_in_void += 1
                     void_gb[i].append(j)
 
-        if number_of_gb_in_void != 0:
-            if number_of_gb_in_void <= 2:
-                void_parameter = 1
-            elif number_of_gb_in_void == 3:
-                void_parameter = 0.75
-            elif number_of_gb_in_void == 4:
-                void_parameter = 0.5
+        if number_of_gb_in_void!=0:
+            void_parameter=round((2*(1/number_of_gb_in_void)), 2)
+            if void_parameter>1:
+                void_parameter=1
+            elif void_parameter<0.5:
+                void_parameter=0.25
+        else:
+            void_parameter=0
+
+        """
+        if number_of_gb_in_void!=0:
+            if number_of_gb_in_void<=2:
+                void_parameter=1
+            elif number_of_gb_in_void==3:
+                void_parameter=0.75
+            elif number_of_gb_in_void==4:
+                void_parameter=2*(1/number_of_gb_in_void)
             else:
-                void_parameter = 0.25
-        elif number_of_gb_in_void == 0:
-            void_parameter = 0
+                void_parameter=0.25
+                #void_parameter=2*(1/number_of_gb_in_void)
+        elif number_of_gb_in_void==0:
+            void_parameter=0"""
 
         void_par[i] = void_parameter
 
@@ -58,6 +69,6 @@ def void_parameter(gbdata, selected, centers, radii, drawing):
             gb_par[gb]=void_par[n]
 
     # Sort keys - Interesting, it breaks the dictionary form, it can be useful.
-    #dictionary_items = gb_par.items()
-    #sorted_items = sorted(dictionary_items)
+    # dictionary_items = gb_par.items()
+    # sorted_items = sorted(dictionary_items)
     return gb_par

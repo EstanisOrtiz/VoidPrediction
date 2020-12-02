@@ -1,7 +1,6 @@
 import numpy as np
-def checkCollision(x1, x2, y1, y2, x, y, radius):
+def checkCollision(x1, x2, y1, y2, x, y, radius, fos):
     """
-
     :param x1: start coordinate x of the grain boundary.
     :param x2: end coordinate x of the grain boundary.
     :param y1: start coordinate y of the grain boundary.
@@ -9,9 +8,9 @@ def checkCollision(x1, x2, y1, y2, x, y, radius):
     :param x: coordinate x of the void center
     :param y: coordinate y of the void center
     :param radius: radii of the void
+    :param fos: Factor of safety on the radiius
     :return: boolean expression to whether the grain boundary is or is not inside the void
     """
-    fos=1.5 # Factor of safety on the radiius
 
     if x1>(x - radius*fos) and x1<(x + radius*fos) and y1>(y - radius*fos) and y1<(y + radius*fos) \
             or x2>(x - radius*fos) and x2<(x + radius*fos) and y2>(y - radius*fos) and y2<(y + radius*fos):
