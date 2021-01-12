@@ -1,2 +1,9 @@
-140
-401
+# Column 1:   Selected grain boundary location of the input sample
+# Column 2:   Void parameter value
+# Column 3:   Distance from the grain boundary to the void
+# Column 4:   Void ID
+# Column 5:   Sorted GB by distance from the center of the void
+
+140	-1	10.733126291998991	0	0
+401	1	1.781176249697741	2	2
+439	1	1.111056005045678	2	1

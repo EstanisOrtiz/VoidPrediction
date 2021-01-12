@@ -1,17 +1,11 @@
 import cv2
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
 import os.path
 
 # Custom modules
 from modules import voiddetect as vd
-from modules import select_voidboundaries as sel
-from modules import checkCollision as checkCollision
-from modules import void_parameter as void_parameter_function
+from modules import void_parameter as vdpr
 
-# z = int(raw_input('How many files would you like to add?: '))
 ## Gather inputs
 inputs = ['1_001', '1_002', '1_003', '1_004', '1_005', '1_006', '1_007', '1_008', '1_009', '1_010',
           '2_001', '2_002', '2_003', '2_004', '2_005', '2_006', '2_007', '2_008', '2_009',
@@ -25,7 +19,6 @@ inputs = ['1_001', '1_002', '1_003', '1_004', '1_005', '1_006', '1_007', '1_008'
 for name in inputs:
     print(name)
     lattice = 'bcc'
-    # lattice = raw_input("\n\nCrystal Structure\nIndicate crystal structure.\nType one of the options fcc/bcc/hcp as shown: ")
 
     ### get current directory
     pa_current = os.environ['PWD']
@@ -35,26 +28,26 @@ for name in inputs:
     # define paths for convenience
     pa_pic = pa_current + '/pyinputs/' + name + '.jpg'
     pa_txt = pa_current + '/pyinputs/' + name + '.txt'
-    pa_selected = pa_current + '/saboutputs/' + name + '/' + 'selected.txt'
+    pa_selected_old = pa_current + '/saboutputs/' + name + '/selected.txt'
+    pa_selected = pa_current + '/output/' + name + '/selected.txt'
 
     ### Read data from text file
     gbdata = np.genfromtxt(pa_txt)
     selected_data = np.genfromtxt(pa_selected)
+    selected_data_old = np.genfromtxt(pa_selected_old)
+
+    # define maximum void area as a multiple of average grain size (last number is factor of multiplication)
     width = np.amax(gbdata[:, 17])
     height = np.amax(gbdata[:, 18])
-    # define maximum void area as a multiple of average grain size (last number is factor of multiplication)
     maxarea = width * height / np.amax(gbdata[:, 20]) * 2.5
 
     ### run voiddetect module and return centers and radii of detected voids
     centers, radii, vheight, voidimage, drawing = vd.findvoid(pa_pic, name, maxarea)
 
-    ### Select boundaries in void vicinity  - WRONG VALUES, USE selected_data form saboutputs
-    selected = sel.selgb(gbdata, centers, radii)
-
-    ### Starting points
+    # Starting points
     staptsx = gbdata[:, 15]
     staptsy = gbdata[:, 16]
-    #### Ending points
+    # Ending points
     endptsx = gbdata[:, 17]
     endptsy = gbdata[:, 18]
     mis_angle = gbdata[:,6]
@@ -62,107 +55,115 @@ for name in inputs:
     # Find dimensions for picture
     width = np.amax(gbdata[:, 17])
     height = np.amax(gbdata[:, 18])
-    # Column 20-21: IDs of right hand and left hand grains
-    lhgrain=gbdata[:, 19]
-    rhgrain=gbdata[:, 20]
-
-    #ratio = height / vheight
-
-    #centers = np.asarray(centers) * ratio * 1.054
-    #radii = np.asarray(radii) * ratio
-
+    ### Selected data
+    selected=selected_data[:,0]
+    distance=selected_data[:,2]
+    void_id=selected_data[:,3]
+    dic_void, min_length, dis_par = vdpr.void_parameter(gbdata, selected, distance, void_id, centers, drawing)
     # Blank image
     height_factor = drawing.shape[0]/np.int64(height)
     width_factor = drawing.shape[1]/np.int64(width)
-    image_void=255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
-    image_check =255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
+    # Categories gb image, [gray:gb, pink:new selected, green:old selected, orange:small gb]
+    image_void = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
+    # Only all selected void gb in blue
+    image_check = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
+    # Definitive image.
     image = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
+    #Parameter void - Only for documentation pictures
+    #image_vp = 255 * np.ones(shape=[drawing.shape[0]*3, drawing.shape[1]*3, 3], dtype=np.uint8)
 
-    for i, _ in enumerate(endptsx):
-        start_point = (np.int64(width_factor*staptsx[i]), np.int64(height_factor*staptsy[i]))
-        end_point = (np.int64(width_factor*endptsx[i]), np.int64(height_factor*endptsy[i]))
+    for j, _ in enumerate(endptsx): # Grain Boundary
         thickness = 2
-        if i in selected_data:
-            color = (0 , 255, 0)
+        x_s = np.int64(width_factor * staptsx[j])
+        y_s = np.int64(height_factor * staptsy[j])
+        x_e = np.int64(width_factor * endptsx[j])
+        y_e = np.int64(height_factor * endptsy[j])
+        s_p = (np.int64(x_s), np.int64(y_s))
+        e_p = (np.int64(x_e), np.int64(y_e))
+        leng = np.asarray(e_p) - np.asarray(s_p)
+        length = np.linalg.norm(leng)
+
+        # IMAGE VOID
+        if length < min_length and j in selected:  # Too small gb
+            color = (0, 140, 255)
+        elif j in selected_data_old: # Old code
+            color = (0, 255, 0)
+        elif j in selected: # New selected gb
+            color = (255, 153, 255)
         else:
-            color = (0,0,0)
-        image = cv2.line(image, start_point, end_point, color, thickness)
-        image_void = cv2.line(image_void, start_point, end_point, (245, 245, 245), thickness)
+            color= (245, 245, 245) # Grey
+        image_void = cv2.line(image_void, s_p, e_p, color, thickness)
+
+        # IMAGE
+        if j in selected and length > min_length:
+            color1 = (0, 255, 0)
+        elif j in selected and length < min_length:
+            color1 = (255, 255, 255)  # Blank
+        else:
+            color1 = (245, 245, 245)
+        image = cv2.line(image, s_p, e_p, color1, thickness)
+
+        # IMAGE CHECK
+        if j in selected and length>min_length:
+            image_check = cv2.line(image_check, s_p, e_p, (255,0,0), 1)
+            x_m=(e_p[0]+s_p[0])/2
+            y_m=(e_p[1]+s_p[1])/2
+            mid_gb = (int(x_m), int(y_m))
+            cv2.circle(image_check, mid_gb, 2, (0, 0, 0), -1)
+            vp=dic_void[j]
+            cv2.putText(image_check, str(vp), mid_gb, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+        '''
+        # Image test - Documentation Picture - sample 1_004
+        void_22=[1151,1166,959,888,1020]
+        if j in void_22:
+            s_p1=(s_p[0]*3,s_p[1]*3)
+            e_p1=(e_p[0]*3,e_p[1]*3)
+
+            image_vp = cv2.line(image_vp, s_p1, e_p1, (255, 0, 0), 2)
+            x_m = (e_p1[0] + s_p1[0]) / 2
+            y_m = (e_p1[1] + s_p1[1]) / 2
+            mid_gb = (int(x_m), int(y_m))
+            cv2.circle(image_vp, mid_gb, 2, (0, 0, 0), -2)'''
 
 
+    # Draw Voids
     for i, center in enumerate(centers):
+        text_loc=(int(center[0]-radii[i]), int(center[1]-radii[i])-10)
         cv2.circle(image, center, 3, (255, 0, 0), -1)
         cv2.circle(image, center, int(radii[i]), (0, 0, 255), 3)
-        cv2.putText(image ,str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 2, (0,0,255), 2)
+        cv2.putText(image, str(i), text_loc, cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
-    void_dicc = {}
-    void_parameter_dicc = {}
+        cv2.circle(image_void, center, 3, (255, 0, 0), -1)
+        cv2.circle(image_void, center, int(radii[i]), (0, 0, 255), 3)
+        cv2.putText(image_void, str(i), text_loc, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-    for i, center in enumerate(centers): #Centers
-        print('-----', str(i), '---------')
-        count = 0
-        number_of_gb_in_void = 0
-        for j, _ in enumerate(endptsx):
-            thickness = 4
-            x_s = np.int64(width_factor * staptsx[j])
-            y_s = np.int64(height_factor * staptsy[j])
-            x_e = np.int64(width_factor * endptsx[j])
-            y_e = np.int64(height_factor * endptsy[j])
-            s_p = (np.int64(x_s), np.int64(y_s))
-            e_p = (np.int64(x_e), np.int64(y_e))
+        cv2.circle(image_check, center, 1, (0, 0, 255), -1)
+        cv2.circle(image_check, center, int(radii[i]), (0, 0, 255), 1)
+        cv2.putText(image_check, str(i), text_loc, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
 
-            if checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i], 1) is True:
-                image_check = cv2.line(image_check, s_p, e_p, (255,0,0), thickness)
-                if j in selected_data:
-                    color = (0, 255, 0)
-                    number_of_gb_in_void += 1
-                else:
-                    color = (255, 153, 255)
-                    print(j)
-                image_void = cv2.line(image_void, s_p, e_p, color, thickness)
-            elif checkCollision.checkCollision(x_s, x_e, y_s, y_e, center[0], center[1], radii[i], 1) is False and j in selected_data:
-                    color = (255, 255, 0)
-                    print("-", str(j), '-')
-                    image_void = cv2.line(image_void, s_p, e_p, color, thickness)
-            cv2.circle(image_void, center, 3, (255, 0, 0), -1)
-            cv2.circle(image_void, center, int(radii[i]), (0, 0, 255), 3)
-
-        if number_of_gb_in_void!=0:
-            void_parameter=round((2*(1/number_of_gb_in_void)), 2)
-            if void_parameter>1:
-                void_parameter=1
-            elif void_parameter<0.5:
-                void_parameter=0.25
-        else:
-            void_parameter=0
-
-        cv2.putText(image_void, str(i), center, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        parameter_center=(center[0],center[1]+50)
-        cv2.putText(image_void, str(void_parameter), parameter_center, cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 0, 0), 2)
-
-        void_parameter_dicc[i]= void_parameter
-        void_dicc[i] = number_of_gb_in_void
-    # print(void_parameter_dicc) # Num Void and Void Parameter
-    # print(void_dicc)  # Num Void and Number of gb inside
-    # test_function=void_parameter_function.void_parameter(gbdata, selected_data, centers, radii, drawing)
-    # print(test_function)
+        """ # Documentation Picture - sample 1_004
+        if i==22:
+            center1=(center[0]*3, center[1]*3)
+            radi=int(radii[i]*3)
+            cv2.circle(image_vp, center1, 1, (0, 0, 255), -1)
+            cv2.circle(image_vp, center1, radi, (0, 0, 255), 2)
+            cv2.putText(image_vp, str(i), text_loc, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        """
 
     # SAVE THE PICTURES
     os.system('mkdir -p ' + pa_current + '/output/' + name)
     pa_image = pa_current + '/output/' + name
-    #cv2.imwrite(os.path.join(pa_image, name + '_' + format(len(centers)) + '.png'), image)
-    #cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
-    #cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
-    #cv2.imwrite(os.path.join(pa_image, str(name) + '_selected' + '.png'), image_void)
+    cv2.imwrite(os.path.join(pa_image, name + '_' + format(len(centers)) + '.png'), image)
+    cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
+    cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
+    cv2.imwrite(os.path.join(pa_image, str(name) + '_categories' + '.png'), image_void)
+    cv2.imwrite(os.path.join(pa_image, str(name) + '_voidparameter' + '.png'), image_check)
+    #cv2.imwrite(os.path.join(pa_image, str(name) + '_vp' + '.png'), image_vp)   # Documentation Picture
 
     # SHOW PICTURE
-    cv2.imshow(name, image_void)
-    cv2.imshow('CHECK', image_check)
-    cv2.waitKey(0)
-
-    # SAVE NEW SELECTED BOUNDARIES
-
-
-
-
-    break
+    #cv2.imshow('Selected GB', image)
+    #cv2.imshow('Selected & Void Parameter', image_check)
+    #cv2.imshow('GB Categories', image_void)
+    #cv2.imshow('Testing', image_vp) # Documentation Picture
+    #cv2.waitKey(0)

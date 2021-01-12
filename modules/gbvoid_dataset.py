@@ -12,28 +12,34 @@ def gbvoid_dataset(input_name):
     """
     ### get current directory
     pa_current = os.getcwd()
-    pa_parent = os.path.dirname(pa_current)
 
     # define paths for convenience
     pa_pic = pa_current + '/pyinputs/' + input_name + '.jpg'
     pa_txt = pa_current + '/pyinputs/' + input_name + '.txt'
-    pa_selected = pa_current + '/saboutputs/' + input_name + '/' + 'selected.txt'
-
+    pa_selected = pa_current + '/output/' + input_name + '/selected.txt'
 
     ### Read data from text file
     gbdata = np.genfromtxt(pa_txt)
     selected_data = np.genfromtxt(pa_selected)
+
+    ### Selected data
+    selected=selected_data[:,0]
+    vp=selected_data[:,1]
+
     # define maximum void area as a multiple of average grain size (last number is factor of multiplication)
     # Find dimensions for picture
     width = np.amax(gbdata[:, 17])
     height = np.amax(gbdata[:, 18])
     maxarea = width * height / np.amax(gbdata[:, 20]) * 2.5
     centers, radii, vheight, voidimage, drawing = findvoid(pa_pic, input_name, maxarea)
+
+    # SIGMA VALUE - FROM TXT FILES
     energy_data=[]
     for gb in range(gbdata.shape[0]):
         pa_energy = pa_current + '/energy_output/' + input_name + '/' + 'en_' + str(gb) + '.ref'
         if path.exists(pa_energy) is True:
-            energy=[np.genfromtxt(pa_energy)[1]]
+            en=np.genfromtxt(pa_energy)[1]
+            energy=[en]
         else:
             energy=[0]
         energy_data.append(energy)
@@ -41,7 +47,7 @@ def gbvoid_dataset(input_name):
 
     void_data=[]
     for gb1 in range(gbdata.shape[0]):
-        if gb1 in selected_data:
+        if gb1 in selected:
             void=[1]
         else:
             void=[0]
@@ -50,19 +56,13 @@ def gbvoid_dataset(input_name):
     gbdata = np.append(gbdata, void_data, axis=1)
 
     X_void=pd.DataFrame(gbdata)
-
-    void_par = void_parameter(gbdata, selected_data, centers, radii, drawing)
-
     Y_void=np.zeros(len(gbdata))
-    #for i, gbinfo in enumerate(gbdata):
-        #if i in selected_data:
-            #Y_void[i]=1
-        #else:
-            #Y_void[i]=0
 
+    sel_i=0
     for i, gbinfo in enumerate(gbdata):
-        if i in void_par.keys():
-            Y_void[i]=void_par[i]
+        if i in selected:
+            Y_void[i]=vp[sel_i]
+            sel_i=sel_i+1
         else:
             Y_void[i]=0
 
