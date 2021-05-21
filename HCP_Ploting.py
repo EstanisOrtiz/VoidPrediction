@@ -24,7 +24,7 @@ verts = [[v[0], v[3], v[2], v[4]], [v[0], v[5], v[7], v[3]], [v[4], v[2], v[6], 
 
 # plot sides
 ax.add_collection3d(Poly3DCollection(verts,
-                                     facecolors='cyan', linewidths=1, edgecolors='r', alpha=.25))
+                                     facecolors='cyan', linewidths=1, edgecolors='black', alpha=.00))
 
 
 atoms = np.array([[0, 0, 0],
@@ -33,13 +33,13 @@ atoms = np.array([[0, 0, 0],
                   [-0.5 * a1, -0.5 * np.sqrt(3.0) * a1, 0],
                   [-0.5 * a1, 0.5 * np.sqrt(3.0) * a1, 0],
 
-                  [0, 1/3* np.sqrt(3.0) * a1, 0.5 * c],
-                  [0.5 * a1, -1/6 * np.sqrt(3.0) * a1, 0.5 * c],
-                  [-0.5 * a1,-1/6 * np.sqrt(3.0) * a1, 0.5 * c],
+                  [0, -1/3* np.sqrt(3.0) * a1, 0.5 * c],
+                  [0.5 * a1, 1/6 * np.sqrt(3.0) * a1, 0.5 * c],
+                  [-0.5 * a1,1/6 * np.sqrt(3.0) * a1, 0.5 * c],
 
-                  [0, 1/3 * np.sqrt(3.0) * a1, -0.5 * c],
-                  [0.5 * a1, -1/6 * np.sqrt(3.0) * a1, -0.5 * c],
-                  [-0.5 * a1, -1/6 * np.sqrt(3.0) * a1, -0.5 * c]])
+                  [0, -1/3 * np.sqrt(3.0) * a1, -0.5 * c],
+                  [0.5 * a1, 1/6 * np.sqrt(3.0) * a1, -0.5 * c],
+                  [-0.5 * a1, 1/6 * np.sqrt(3.0) * a1, -0.5 * c]])
 
 plane_neutral=atoms[:5]
 plane_top=atoms[5:8]
@@ -48,12 +48,24 @@ plane_bottom=atoms[8:]
 atoms_label = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11')
 
 for x, y, z in atoms:
-    ax.scatter(x, y, z, s=60, color='black', marker='o')
+    ax.scatter(x, y, z, s=100, color='r', marker='o',alpha=.5)
 
 #for x, y, z, a_label in atoms, atoms_label:
     #ax.scatter(x, y, z, s=60 ,color='black', marker='o')
     #ax.text(x, y, z, label, a_label)
 
+
+# make the panes transparent
+ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+# make the grid lines transparent
+ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+ax.zaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+
+
+    
 plt.figure(1)
 ax.set_xlabel('X = a')
 ax.set_ylabel('Y = √3*a')

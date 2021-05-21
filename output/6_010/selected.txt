@@ -1,9 +1,12 @@
-# Column 1:   Selected grain boundary location of the input sample
-# Column 2:   Void parameter value
-# Column 3:   Distance from the grain boundary to the void
-# Column 4:   Void ID
-# Column 5:   Sorted GB by distance from the center of the void
+# Column 1:    Selected grain boundary location of the input sample
+# Column 2:    Void parameter value
+# Column 3:    Distance from the grain boundary to the center void
+# Column 4:    Void ID
+# Column 5:    Sorted GB by distance from the center of the void
+# Column 6-7:  Supposed intersections point of GB with void edge, x and y
+# Column 8-9:  Supposed GB junction point
+# Column 10:   Predicted length of GB continuity (not totally length.) 
 
-140	-1	10.733126291998991	0	0
-401	1	1.781176249697741	2	2
-439	1	1.111056005045678	2	1
+140	-1	4.924313907415669	0	0	134.703219460599456	676.648390269700258	-1	-1	-1
+401	1	1.651101224609276	2	1	-1	-1	-1	-1	-1
+439	1	2.931514476637642	2	2	519.026688198116176	420.757600225132023	-1	-1	-1

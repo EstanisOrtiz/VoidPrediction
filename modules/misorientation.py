@@ -1,4 +1,6 @@
 import numpy as np
+from fractions import Fraction
+import math
 
 def symmetry_operators(structure, use_miller_bravais=False):
     """ FIX IT - from .sym_op import symmetry_operators as sym
@@ -136,4 +138,15 @@ def misorientation_matrix(g1, g2):  # Radians
     misorientation_matrix = np.dot(g1, np.linalg.inv(g2))
     return misorientation_matrix
 
+def miller(a):
+    """For unit axis vector (a) return the miller indices"""
+    miller=[]
+    fractions_list=[Fraction(x).limit_denominator() for x in a]
+    lcm = np.lcm.reduce([fr.denominator for fr in fractions_list])
+    vals = [int(fr.numerator * lcm / fr.denominator) for fr in fractions_list]
+    mini=np.amin(vals)
+    mil=vals/mini
+    for flo in mil:
+        miller.append(math.ceil(flo))
+    return miller
 
