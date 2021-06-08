@@ -268,7 +268,7 @@ for name in inputs:
         cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
         cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
         cv2.imwrite(os.path.join(pa_image, str(name) + '_categories' + '.png'), image_void)
-        cv2.imwrite(os.path.join(pa_image, str(name) + '_voidparameter' + '.png'), image_check)
+        cv2.imwrite(os.path.join(pa_image, str(name) + '_parameter' + '.png'), image_check)
         cv2.imwrite(os.path.join(pa_image, str(name) + '_vp' + '.png'), image_vp)   # Documentation Picture
 
     # SHOW PICTURE
