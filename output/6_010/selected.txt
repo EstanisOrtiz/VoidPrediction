@@ -5,8 +5,9 @@
 # Column 5:    Sorted GB by distance from the center of the void
 # Column 6-7:  Supposed intersections point of GB with void edge, x and y
 # Column 8-9:  Supposed GB junction point
-# Column 10:   Predicted length of GB continuity (not totally length.) 
+# Column 10:   Reconstructed length of GB continuity
+# Column 11:   Proximity parameter.
 
-140	-1	4.924313907415669	0	0	134.703219460599456	676.648390269700258	-1	-1	-1
-401	1	1.651101224609276	2	1	-1	-1	-1	-1	-1
-439	1	2.931514476637642	2	2	519.026688198116176	420.757600225132023	-1	-1	-1
+140	-1	4.924313907415669	0	0	134.703219460599456	676.648390269700258	-1	-1	-1	None
+401	1	1.651101224609276	2	1	-1	-1	-1	-1	-1	0.3025743415334075
+439	1	2.931514476637642	2	2	519.026688198116176	420.757600225132023	-1	-1	-1	0.0

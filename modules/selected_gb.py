@@ -95,7 +95,7 @@ def selected_gb(name): # Name sample
     for n,se in enumerate(sel):
         if se not in pt3.keys():
             pt3[se]=(-1,-1)
-    # Pt3 it a dicc key:selected gb, value: interesection points
 
+    # Pt3 it a dicc key:selected gb, value: interesection points
 
     return sel, dist, void_id, pt3

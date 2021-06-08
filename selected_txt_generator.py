@@ -13,7 +13,7 @@ inputs = ['1_001', '1_002', '1_003', '1_004', '1_005', '1_006', '1_007', '1_008'
           '5_001', '5_002', '5_003', '5_004', '5_005', '5_006', '5_007', '5_008', '5_009', '5_010', '5_011',
           '6_001', '6_002', '6_003', '6_004', '6_005', '6_006', '6_007', '6_008', '6_009', '6_010']
 
-inputs=['1_001']
+#inputs=['1_003']
 
 # Create the selected.txt
 for input in inputs:
@@ -26,6 +26,9 @@ for input in inputs:
     ### Read data from text file
     gbdata = np.genfromtxt(pa_txt)
     selected, dist, void_id, pt3= selgb.selected_gb(input)
+
+
+
     width = np.amax(gbdata[:, 17])
     height = np.amax(gbdata[:, 18])
     # define maximum void area as a multiple of average grain size (last number is factor of multiplication)
@@ -34,8 +37,9 @@ for input in inputs:
     centers, radii, vheight, voidimage, drawing = vd.findvoid(pa_pic, input, maxarea)
 
     void_dic,  min_length, dis_par, ipd_total, pred_lines,same_inter_total = vdpr.void_parameter(gbdata, selected,dist,void_id,centers,radii,drawing)
+
+    prox_par=vdpr.proximity_parameter(gbdata, selected, void_id, centers, radii, drawing, ipd_total,void_dic)
     # void_dic: Key=selected boundary & Value=Void Parameter.
-    print(same_inter_total)
 
     ### Create directory if it does not exist already: CREATE DIRECTORY FOR OUTPUTS
     pathout = pa_current + '/output/' + input     # Output path
@@ -50,13 +54,15 @@ for input in inputs:
     fout.write('# Column 5:    Sorted GB by distance from the center of the void\n')
     fout.write('# Column 6-7:  Supposed intersections point of GB with void edge, x and y\n')
     fout.write('# Column 8-9:  Supposed GB junction point\n')
-    fout.write('# Column 10:   Predicted length of GB continuity (not totally length.) \n\n')
+    fout.write('# Column 10:   Reconstructed length of GB continuity\n')
+    fout.write('# Column 11:   Proximity parameter.\n\n')
 
     for j, sele in enumerate(selected):
         vp=void_dic.get(sele)
         p3=pt3.get(sele)
         int_pts=ipd_total.get(sele)
         sorted_dis=dis_par.get(sele)
+        prox=prox_par.get(sele)
         # Values without other intesection or is not sorted
         if sorted_dis==None:
             sorted_dis=0
@@ -66,11 +72,11 @@ for input in inputs:
         pt4_x = int_pts[0][1][0]
         pt4_y = int_pts[0][1][1]
 
-
         fout.write(str(sele)+'\t'+str(vp)+'\t'+str(format(dist[sele], '.15f'))+'\t'+str(void_id[j])+'\t'+str(sorted_dis))
         fout.write('\t'+str(p3[0])+'\t'+str(p3[1]))
         fout.write('\t'+str(pt4_x)+'\t'+str(pt4_y))
         fout.write('\t' + str(length_sup))
+        fout.write('\t' + str(prox))
         fout.write('\n')
 
     fout.close()

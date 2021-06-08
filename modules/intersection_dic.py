@@ -10,7 +10,7 @@ def intersection_dic(location_dic,center,radi,width_factor,height_factor):  # CH
     :param radi: Radio of the void
     :return: ipd: dictionary with {tag of the gb and value [x,y],l} where x and y are the coordinates of the first
     intersection between the other supposed continuity of the gb inside the void and l is distance of it
-    supposed continuity. Transform it to microns.
+    supposed continuity. l -> microns.
     :return: pred_lines_dic: dic key=selected gb & Value=juncton point
     :return: same_inter: key=selected gb & Value=
     """
@@ -27,6 +27,7 @@ def intersection_dic(location_dic,center,radi,width_factor,height_factor):  # CH
         x1,y1,x2,y2=gb_s[0],gb_s[1],gb_e[0],gb_e[1]
         inter_points = check.circle_line_segment_intersection(center, radi, gb_s, gb_e)
         inter_point_within=check.circle_line_segment_intersection(center, radi, gb_s, gb_e , full_line=False)
+
         # Boundary that is defined inside the void and it have two possible continuity, select the larger contin.
         if len(inter_point_within)==0:
             cont_distances=[]
@@ -36,11 +37,18 @@ def intersection_dic(location_dic,center,radi,width_factor,height_factor):  # CH
                 c_d=np.sqrt((x_mid_point - cont[0]) ** 2 + (y_mid_point - cont[1]) ** 2)
                 cent_d=np.sqrt((x_mid_point - center[0]) ** 2 + (y_mid_point - center[1]) ** 2)
                 cont_distances.append(c_d)
-                if cent_d<radi: # gb inside the gb void
+                if cent_d<=radi: # gb inside the gb void
                     ii = cont_distances.index(max(cont_distances))  # max is deleted
+                    inter_point_within.append(inter_points[ii])
+
                 elif cent_d>radi:
                     ii = cont_distances.index(min(cont_distances))  # min is deleted
-            inter_point_within.append(inter_points[ii])
+                    inter_point_within.append(inter_points[ii])
+                else:
+                    print('WARNING!! - intersection_dic.py - line 47')
+                    print(cent_d)
+                    print(radi)
+            #inter_point_within.append(inter_points[ii])
 
         for pt in inter_points:
             if pt not in inter_point_within:
@@ -51,11 +59,14 @@ def intersection_dic(location_dic,center,radi,width_factor,height_factor):  # CH
                 else:
                     p3=gb_s
                 pred_lines.append([list(p3),list(pt)])
+        if inter_points==inter_point_within:
+            pred_lines.append([list(gb_s),[gb_s[0]+(10**-6),gb_s[1]+(10**-6)]])
 
     intersection={}
     all_near_pt={}
     pred_lines_dic={}
     all_min_position=[]
+
     for key,line1 in zip(gb_id,pred_lines):
         pred_lines_dic[key]=pred_lines
         near_pt=line1[0]
@@ -82,6 +93,7 @@ def intersection_dic(location_dic,center,radi,width_factor,height_factor):  # CH
                     int_points.append(intersection_point_microns)
                     #int_points.append(intersection_point)
                     l.append(long)
+
         if len(l)>0:
             l_sorted=sorted(l)
             min_ind=l.index(l_sorted[0])
@@ -91,6 +103,7 @@ def intersection_dic(location_dic,center,radi,width_factor,height_factor):  # CH
             all_min_position.append(min_position)
         #all_near_pt[key]=near_pt
         all_near_pt[key]=near_pt_microns
+
     ipd={}
     same_inter = {}
     for i, (clave, valor) in enumerate(intersection.items()):
@@ -117,8 +130,6 @@ def intersection_dic(location_dic,center,radi,width_factor,height_factor):  # CH
             #start=location_dic.get()
             #end=
             #check.min_distance_from_center(center, lin)
-
-
 
     return ipd, pred_lines_dic, same_inter
 
@@ -182,9 +193,6 @@ def intersection_dic_test(gb_start,gb_end,center,radi): # FIX IT - LOOK 'interse
         x1,y1,x2,y2=gb_s[0],gb_s[1],gb_e[0],gb_e[1]
         inter_points = check.circle_line_segment_intersection(center, radi, gb_s, gb_e)
         inter_point_within=check.circle_line_segment_intersection(center, radi, gb_s, gb_e , full_line=False)
-        #print('-',iii,'-')
-        #print(inter_points)
-        #print(inter_point_within)
 
         # Boundary that is defined inside the void and it have two possible continuity, select the longest contin.
         if len(inter_point_within)==0:

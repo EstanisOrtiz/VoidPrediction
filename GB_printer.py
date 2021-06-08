@@ -17,7 +17,9 @@ inputs = ['1_001', '1_002', '1_003', '1_004', '1_005', '1_006', '1_007', '1_008'
           '5_001', '5_002', '5_003', '5_004', '5_005', '5_006', '5_007', '5_008', '5_009', '5_010', '5_011',
           '6_001', '6_002', '6_003', '6_004', '6_005', '6_006', '6_007', '6_008', '6_009', '6_010']
 
-inputs=['1_001']
+#inputs=['1_003']
+
+saver=1     # 1 - Save the figures; 0 - Show the figures
 
 for name in inputs:
     print(name)
@@ -62,23 +64,31 @@ for name in inputs:
     selected=selected_data[:,0]
     distance=selected_data[:,2]
     void_id=selected_data[:,3]
-    #p3=selected_data[:,5]
     p3_x=selected_data[:,5]
     p3_y=selected_data[:,6]
+    prox_par=selected_data[:,10]
 
     selected_selgb, dist_selgb, void_id_selgb, pt3_selgb = selgb.selected_gb(name)
 
     # Distances from txt to dictionary:
     distance_dic={}
-    for gbid, dis in zip(selected, distance):
+    prox_par_dic={}
+    void_id_dic={}
+    #pt_int_dic={}
+    for gbid, dis, prox, p3x,p3y,vid in zip(selected, distance,prox_par,p3_x,p3_y,void_id):
         distance_dic[gbid]=dis
+        prox_par_dic[gbid] = prox
+        void_id_dic[gbid]=vid
+
+        #pt_int_dic[gbid]=(int(p3x),int(p3y))
+        #if prox!=0:
+            #prox_par_dic[gbid]=prox
 
     dic_void, min_length, dis_par, inter_points_dic, pred_lines,same_inter_total= vdpr.void_parameter(gbdata, selected, distance_dic, void_id, centers, radii, drawing)
 
     # Blank image
     height_factor = drawing.shape[0]/np.int64(height)
     width_factor = drawing.shape[1]/np.int64(width)
-
 
     # Categories gb image, [gray:gb, pink:new selected, green:old selected, orange:small gb]
     image_void = 255 * np.ones(shape=[drawing.shape[0], drawing.shape[1], 3], dtype=np.uint8)
@@ -100,8 +110,8 @@ for name in inputs:
         leng = np.asarray(e_p) - np.asarray(s_p)
         length = np.linalg.norm(leng)
 
-        if j==500:
-            distan_test_2 = np.sqrt(((x_e - x_s) ** 2) + ((y_e - y_s) ** 2))
+        #if j==500:
+            #distan_test_2 = np.sqrt(((x_e - x_s) ** 2) + ((y_e - y_s) ** 2))
 
         # IMAGE VOID
         if length < min_length and j in selected:  # Too small gb
@@ -134,8 +144,22 @@ for name in inputs:
             cv2.putText(image_check, str(vp), mid_gb, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
 
             image_vp = cv2.line(image_vp, s_p, e_p, (255, 0, 0), 1)
-            #cv2.putText(image_vp, str(j), mid_gb, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
 
+            # Print proximity parameter
+            parox=round(prox_par_dic.get(j),2)
+            cv2.putText(image_vp, str(parox), mid_gb, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+
+            if void_id_dic.get(j)==3:
+                prox, p3s = check.inside_len(s_p, e_p, centers[3], radii[3],width_factor,height_factor)
+                len_org = check.distance(p3s[0], p3s[1])
+
+                for p3 in p3s:
+                    if p3[0] > 0 and p3[1] > 0:
+                        p3d = tuple(np.array(p3, int))
+                        cv2.circle(image_vp, p3d, 1, (0, 0, 0), -1)
+
+            """
             # EXTENDED VOID DRAWING
             index=selected.tolist().index(j)
             v_id=void_id[index]
@@ -150,7 +174,8 @@ for name in inputs:
                     else:
                         ptt = (x_s, y_s)
                     pt3_draw = (int(pt3[0]), int(pt3[1]))
-                    #cv2.line(image_vp, ptt, pt3_draw, (0, 255, 0), 1)
+                    cv2.line(image_vp, ptt, pt3_draw, (0, 255, 0), 1)
+            """
 
     # Draw Voids
     for i, center in enumerate(centers):
@@ -223,9 +248,6 @@ for name in inputs:
                 cv2.circle(image_check, pt1_v, 2, (0, 255, 255), -1)
 
 
-
-
-
     """ IT WORKS WITH DICTIONARY OF ALL INTERSECTIONS POINTS
     print(inter_points_dic[2790])
     for clave, valor in inter_points_dic.items():
@@ -239,21 +261,22 @@ for name in inputs:
     """
 
     # SAVE THE PICTURES
-    #os.system('mkdir -p ' + pa_current + '/output/' + name)
-    #pa_image = pa_current + '/output/' + name
-    #cv2.imwrite(os.path.join(pa_image, name + '_' + format(len(centers)) + '.png'), image)
-    #cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
-    #cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
-    #cv2.imwrite(os.path.join(pa_image, str(name) + '_categories' + '.png'), image_void)
-    #cv2.imwrite(os.path.join(pa_image, str(name) + '_voidparameter' + '.png'), image_check)
-    #cv2.imwrite(os.path.join(pa_image, str(name) + '_vp' + '.png'), image_vp)   # Documentation Picture
+    if saver==1:
+        os.system('mkdir -p ' + pa_current + '/output/' + name)
+        pa_image = pa_current + '/output/' + name
+        cv2.imwrite(os.path.join(pa_image, name + '_' + format(len(centers)) + '.png'), image)
+        cv2.imwrite(os.path.join(pa_image, name + '_voids' + '.png'), voidimage)
+        cv2.imwrite(os.path.join(pa_image, name + '_drawing' + '.png'), drawing)
+        cv2.imwrite(os.path.join(pa_image, str(name) + '_categories' + '.png'), image_void)
+        cv2.imwrite(os.path.join(pa_image, str(name) + '_voidparameter' + '.png'), image_check)
+        cv2.imwrite(os.path.join(pa_image, str(name) + '_vp' + '.png'), image_vp)   # Documentation Picture
 
     # SHOW PICTURE
-    #cv2.imshow('Selected GB', image)
-    #cv2.imshow('Selected & Void Parameter', image_check)
-    #cv2.imshow('GB Categories', image_void)
-    #cv2.imshow('Testing', image_vp) # Documentation Picture
-    #cv2.waitKey(0)
-    print(len(mis_angle))
-    print(len(selected))
-    print(ppp)
+    elif saver==0:
+        #cv2.imshow('Selected GB', image)
+        #cv2.imshow('Selected & Void Parameter', image_check)
+        #cv2.imshow('GB Categories', image_void)
+        cv2.imshow('Testing', image_vp) # Documentation Picture
+        cv2.waitKey(0)
+
+    print('Selected file for ', name, 'is DONE')

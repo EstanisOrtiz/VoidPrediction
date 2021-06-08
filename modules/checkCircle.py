@@ -228,3 +228,70 @@ def min_dis_allgb_centers(centers, gb_s,gb_e,width_factor=1,height_factor=1):
     ind=distances.index(d)
     min_center=centers[ind]
     return d
+
+def inside_len(gb_s,gb_e,center, radi,width_factor=1,height_factor=1):
+    """
+    :param gb_s: Gb Start point scaled (x1, y1)
+    :param gb_e: Gb End point scaled (x2,y2)
+    :param center: Void center (cx,cy)
+    :param radi: Void radi
+    :param width_factor:
+    :param height_factor:
+    :return prox: Defined length of the gb inside of the void, microns
+    :return ps: [point touching the void edge, defined end point inside the void] - Not real values, its scaled
+    """
+    # Real values - Don't compare with circle values
+    x1r=gb_s[0] / width_factor
+    y1r=gb_s[1] / height_factor
+    x2r=gb_e[0] / width_factor
+    y2r=gb_e[1] / height_factor
+    length=((x2r-x1r)**2 + (y2r-y1r)**2)**0.5
+
+    # Re-scaled value
+    x1,y1 = gb_s
+    x2,y2 = gb_e
+
+    p1=(x1 - center[0])**2 + (y1 - center[1])**2
+    p2=(x2 - center[0])**2 + (y2 - center[1])**2
+
+    p3=circle_line_segment_intersection(center, radi, gb_s, gb_e,full_line=False)
+
+    if len(p3)==0: # The segment is all inside or outside
+        if p1 < (radi ** 2) and p2 < (radi ** 2):  # Full inside
+            prox=length
+            ps=[gb_s,gb_e]
+        else: # Outside
+            prox=0
+            ps=[(-1,-1),(-1,-1)] # NO POINTS
+
+    elif len(p3)==1: # One intersecction point
+        p3 = p3[0]
+
+        # Scale values
+        x3r = p3[0] / width_factor
+        y3r = p3[1] / height_factor
+
+        if p1 > (radi ** 2): # gb_e inside
+            prox = ((x3r - x2r) ** 2 + (y3r - y2r) ** 2) ** 0.5
+            ps=[gb_e,p3]
+
+        elif p2 > (radi ** 2): # gb_s inside
+            prox = ((p3[0] - gb_s[0]) ** 2 + (p3[1] - gb_s[1]) ** 2) ** 0.5
+            ps=[gb_s,p3]
+
+    elif len(p3)==2:
+        p31=p3[0]
+        p32=p3[1]
+
+        x31r = p31[0] / width_factor
+        y31r = p31[1] / height_factor
+        x32r = p32[0] / width_factor
+        y32r = p32[1] / height_factor
+
+        prox=((x32r-x31r)**2 + (y32r-y31r)**2)**0.5
+        ps=[p31,p32]
+
+    return prox, ps
+
+def distance(p0,p1):
+    return math.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)

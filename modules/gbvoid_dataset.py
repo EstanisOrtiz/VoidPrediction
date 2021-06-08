@@ -1,9 +1,11 @@
 import pandas as pd
 import os
 from os import path
+import numpy as np
 
+# if runs from terminal delete the dot (.)
 from .voiddetect import *
-from .void_parameter import *
+#from .void_parameter import *
 from .checkCircle import *
 
 def gbvoid_dataset(input_name):
@@ -39,6 +41,7 @@ def gbvoid_dataset(input_name):
     x_j=selected_data[:,7]
     y_j=selected_data[:,8]
     l_pred=selected_data[:,9]
+    prox_par = selected_data[:, 10]
 
     # define maximum void area as a multiple of average grain size (last number is factor of multiplication)
     # Find dimensions for picture
@@ -69,13 +72,16 @@ def gbvoid_dataset(input_name):
     l_pred_dic={}
     junction_dic={}
     vp_dic={}
-    for id, dis, vid, xj, yj,lp,vpp in zip(selected,distance,void_id,x_j,y_j,l_pred,vp):
+    prox={}
+
+    for id, dis, vid, xj, yj,lp,vpp,px in zip(selected,distance,void_id,x_j,y_j,l_pred,vp,prox_par):
         dis_dic[id]=dis
         void_id_dic[id]=vid
         x_j_dic[id]= xj
         y_j_dic[id] = yj
         l_pred_dic[id]=lp
         vp_dic[id]=vpp
+        prox[id] = px
 
     for id1 in selected:
         if x_j_dic.get(id1)>0 or y_j_dic.get(id1)>0:
@@ -92,6 +98,8 @@ def gbvoid_dataset(input_name):
     yj_all=[]
     lp_all=[]
     junc_all=[]
+    prox_all=[]
+
     for gb1 in range(gbdata.shape[0]):
         #dist.append(dis_dic.get(gb1))
         gb_s = [staptsx[gb1], staptsy[gb1]]
@@ -103,6 +111,7 @@ def gbvoid_dataset(input_name):
             yj_a=[y_j_dic.get(gb1)]
             lp_a=[l_pred_dic.get(gb1)]
             junc_a=[junction_dic.get(gb1)]
+            prox_a=[prox.get(gb1)]
         else:
             d=[min_dis_allgb_centers(centers, gb_s, gb_e, width_factor,height_factor)]
             vid_a=[-1]
@@ -110,16 +119,19 @@ def gbvoid_dataset(input_name):
             yj_a=[-1]
             lp_a=[-1]
             junc_a=[-1]
+            prox_a=[-1]
+
         dist.append(d)
         vid_all.append(vid_a)
         xj_all.append(xj_a)
         yj_all.append(yj_a)
         lp_all.append(lp_a)
         junc_all.append(junc_a)
+        prox_all.append(prox_a)
 
     #gbdata = np.append(gbdata, dist, axis=1)
 
-    selec_feat=np.concatenate((dist,vid_all,xj_all,yj_all,lp_all,junc_all), axis=1)
+    selec_feat=np.concatenate((dist,vid_all,xj_all,yj_all,lp_all,junc_all,prox_all), axis=1)
     gbdata = np.concatenate((gbdata, selec_feat), axis=1)
 
     #gbdata = np.append(gbdata,selec_feat, axis=1)

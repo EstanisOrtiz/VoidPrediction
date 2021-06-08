@@ -1,5 +1,6 @@
 import numpy as np
 from modules import intersection_dic as ipd
+from modules import checkCircle as check
 
 def void_parameter(gbdata, selected, dist, void_id, centers,radii, drawing,test=None):
     """
@@ -78,8 +79,6 @@ def void_parameter(gbdata, selected, dist, void_id, centers,radii, drawing,test=
         sorted_values = sorted(pre_dic, key=lambda k: (pre_dic[k], k))
         dpr=1
 
-
-
         for key in sorted_values:
             dis_par[key]=dpr
             dpr=dpr+1
@@ -107,3 +106,64 @@ def void_parameter(gbdata, selected, dist, void_id, centers,radii, drawing,test=
     # dictionary_items = gb_par.items()
     # sorted_items = sorted(dictionary_items)
     return gb_par, min_length, dis_par, ipd_total, pred_lines, same_inter_total
+
+def proximity_parameter(gbdata, selected, void_id, centers,radii, drawing,ipd_total,void_dic=[]):
+
+    if len(void_dic)>0:
+        v_dic={}
+        for i, j in zip(selected,void_id):
+            v_dic[i]=j
+
+        selected=[]
+        void_id=[]
+
+        for key,value in void_dic.items():
+            if value==-1:
+                del v_dic[key]
+            else:
+                selected.append(key)
+                void_id.append(v_dic.get(key))
+
+    ### Starting points
+    staptsx = gbdata[:, 15]
+    staptsy = gbdata[:, 16]
+    #### Ending points
+    endptsx = gbdata[:, 17]
+    endptsy = gbdata[:, 18]
+    # Find dimensions for picture
+    width = np.amax(gbdata[:, 17])
+    height = np.amax(gbdata[:, 18])
+
+    height_factor = drawing.shape[0] / np.int64(height)
+    width_factor = drawing.shape[1] / np.int64(width)
+
+    # Dictionary
+    prox_par={}
+
+    for k,sel in enumerate(selected):
+        gb_s = (staptsx[sel]*width_factor, staptsy[sel]*height_factor)
+        gb_e = (endptsx[sel]*width_factor, endptsy[sel]*height_factor)
+
+        center=centers[void_id[k]]
+        radi=radii[void_id[k]]
+
+        len_real, p3s = check.inside_len(gb_s, gb_e, center, radi, width_factor, height_factor)
+
+        if sel in ipd_total.keys():
+            int_pts = ipd_total.get(sel)
+            len_renc=int_pts[1]
+        else:
+            len_renc=0
+
+        if len_real>=0 and len_renc>=0:
+            prx_par=(len_real+len_renc)/(2*radi) # Radi is not in microns
+            prox_par[sel]=prx_par
+
+    if len(void_dic) > 0:
+        my_dict = {w:void_id.count(w) for w in void_id}
+        for k1,v1 in my_dict.items():
+            if v1==1:
+                ind=void_id.index(k1)
+                prox_par[selected[ind]]=1
+
+    return prox_par
